@@ -67,10 +67,10 @@ void calcula_PID()
   erro_anterior = erro_f;
 }
 
-void controle_motores()
+void controle_motores(int velA, int velB)
 {
-  float vel_A = 168;
-  float vel_B = 168;
+  float vel_A = velA;
+  float vel_B = velB;
   velesq = vel_A + PID;
   veldir = vel_B - PID;
   if (velesq < 15)
@@ -124,8 +124,6 @@ void controle_motores_R()
   analogWrite(pwmB, veldirR);
 }
 
-
-
 int calculate_rpm()
 {
 
@@ -146,6 +144,7 @@ int calculate_rpm()
   
 }
 bool ler_sens_lat()
+
 {
   #define tempoDebounce 200
 
@@ -180,42 +179,83 @@ bool ler_sens_lat()
   return estadoSLatEsq;
 }
 
+int marc_dir = 0;
 
-/*bool ler_sens_lat_Dir()
-{
-  #define tempoDebounce2 200
+int v = 0;
+void mapeamento(){
+if(timer_in - timer_prev >= 10){
+  ler_sensores();
+  calcula_PID();
+  controle_motores(50,50);
 
-  bool estadoSLatDir;
-  static bool estadoSLatDirAnt;
-  static bool estadoRetDir = true;
-  static unsigned long delaySenLatDir = 0;
-  int x = 0;
-  int y = 0;
-  if((millis() - delaySenLatDir)> tempoDebounce2){
-    y = analogRead(s_lat_dir);
-    // if(x < 100  && y <100){
-    //   estadoSLatEsq = false;     
-    // }
-    if(y < 150){
-      estadoSLatDir = true;     
+  if(ler_sens_lat() == true){  
+        if(timer_in - timer_prev3 >= 10){
+          v = (v+1);
+          Serial.print("Marca ");
+          Serial.print(v);
+          Serial.print((encoder.getCount() + encoder2.getCount())/2);
+          //Serial.println(timer_in);
+
+        }
+      digitalWrite(led, HIGH);  
+       timer_prev3 = timer_in;
+     }
+      timer_prev = timer_in;
     }
-    else{
-      estadoSLatDir = false;
-    }
-    
-    
-    
-    if(estadoSLatDir && (estadoSLatDir != estadoSLatDirAnt)){
-      estadoRetDir = !estadoRetDir;
-      delaySenLatDir = millis();
-    }
-    estadoSLatDirAnt = estadoSLatDir;
-    
-  }
-  return estadoSLatDir;
 }
 
-*/
+void controle_mapeado(){
+   
+    if(timer_in - timer_prev >= 10){
+      ler_sensores();
+      float encVal = ((encoder.getCount() + encoder2.getCount())/2);
+
+    if(encVal < 18000 && encVal > 1800){
+      calcula_PID_R();
+      controle_motores_R();
+
+    }
+
+    else if(encVal > 51600 && encVal < 68000){
+      calcula_PID_R();
+      controle_motores_R();
+
+    }else if(encVal > 24000 && encVal < 29000){
+      calcula_PID_R();
+      controle_motores_R();
+
+    }
+    else if(encVal > 134000 && encVal < 136500){
+      calcula_PID_R();
+      controle_motores_R();
+
+    }
+    else if(encVal > 90000 && encVal < 100900){
+      calcula_PID_R();
+      controle_motores_R();
+
+    }
+    else if(encVal > 166000){
+      digitalWrite(stby, LOW);
+
+    }
+     else{
+      calcula_PID();
+      controle_motores(168,168);
+    }
+  timer_prev = timer_in;
+    }
+    
+}
+void controle_nao_mapeado(){
+  if(timer_in - timer_prev >= 10){
+      ler_sensores();
+      calcula_PID();
+      controle_motores(168,168);
+        }
+  timer_prev = timer_in;
+    }
+
 void setup()
 {
   Serial.begin(9600);
@@ -257,7 +297,7 @@ void setup()
   
 }
 bool bly = false;
-int v = 0;
+
 int d = 0;
 void loop()
 {
@@ -265,19 +305,9 @@ void loop()
   timer_in = millis();
    
 
-          
-  if(ler_sens_lat() == true){  
-        if(timer_in - timer_prev3 >= 10){
-          v = (v+1);
-          Serial.print("Marca ");
-          Serial.print(v);
-          Serial.print((encoder.getCount() + encoder2.getCount())/2);
-          //Serial.println(timer_in);
+  mapeamento();      
+  controle_mapeado();
 
-        }
-      digitalWrite(led, HIGH);  
-       timer_prev3 = timer_in;
-     }
   /*if(ler_sens_lat_Dir() == true){  
         if(timer_in - timer_prev4 >= 10){
           d = (d+1);
@@ -299,46 +329,5 @@ void loop()
   
  */
   
-    
-    if(timer_in - timer_prev >= 10){
-      ler_sensores();
-      float encVal = ((encoder.getCount() + encoder2.getCount())/2);
-
-    if(encVal < 18000 && encVal > 1800){
-      calcula_PID_R();
-      controle_motores_R();
-
-    }
-
-    else if(encVal > 51600 && encVal < 68000){
-      calcula_PID_R();
-      controle_motores_R();
-
-    }else if(encVal > 24000 && encVal < 29000){
-      calcula_PID_R();
-      controle_motores_R();
-
-    }
-    else if(encVal > 134000 && encVal < 136500){
-      calcula_PID_R();
-      controle_motores_R();
-
-    }
-    else if(encVal > 90000 && encVal < 100900){
-      calcula_PID_R();
-      controle_motores_R();
-
-    }
-    else if(encVal > 166000){
-      digitalWrite(stby, LOW);
-
-    }
-     else{
-      calcula_PID();
-      controle_motores();
-    }
-  timer_prev = timer_in;
-    }
-
- 
+   
 }
