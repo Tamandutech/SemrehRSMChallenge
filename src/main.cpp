@@ -143,9 +143,8 @@ int calculate_rpm()
   return enc;
   
 }
-bool ler_sens_lat()
 
-{
+bool ler_sens_lat_esq(){
   #define tempoDebounce 200
 
   bool estadoSLatEsq;
@@ -154,7 +153,7 @@ bool ler_sens_lat()
   static unsigned long delaySenLat = 0;
   int x = 0;
   int y = 0;
-  if((millis() - delaySenLat)> tempoDebounce){
+  if((millis() - delaySenLat) > tempoDebounce){
     x = analogRead(s_lat_esq);
     y = analogRead(s_lat_dir);
     // if(x < 100  && y <100){
@@ -167,8 +166,6 @@ bool ler_sens_lat()
       estadoSLatEsq = false;
     }
     
-    
-    
     if(estadoSLatEsq && (estadoSLatEsq != estadoSLatEsqAnt)){
       estadoRet = !estadoRet;
       delaySenLat = millis();
@@ -179,20 +176,57 @@ bool ler_sens_lat()
   return estadoSLatEsq;
 }
 
+bool ler_sens_lat_dir(){
+  #define tempoDebounce 200
+
+  bool estadoSLatDir;
+  static bool estadoSLatDirAnt;
+  static bool estadoRet = true;
+  static unsigned long delaySenLat = 0;
+  int x = 0;
+  int y = 0;
+  if((millis() - delaySenLat) > tempoDebounce){
+    x = analogRead(s_lat_esq);
+    y = analogRead(s_lat_dir);
+    // if(x < 100  && y <100){
+    //   estadoSLatEsq = false;     
+    // }
+    if(x < 150){
+      estadoSLatDir = true;     
+    }
+    else{
+      estadoSLatDir = false;
+    }
+    
+    if(estadoSLatDir && (estadoSLatDir != estadoSLatDirAnt)){
+      estadoRet = !estadoRet;
+      delaySenLat = millis();
+    }
+    estadoSLatDirAnt = estadoSLatDir;
+    
+  }
+  return estadoSLatDir;
+}
+
+
 int marc_dir = 0;
 
-int v = 0;
+int num_passo = 0;
 void mapeamento(){
 if(timer_in - timer_prev >= 10){
   ler_sensores();
   calcula_PID();
   controle_motores(50,50);
 
-  if(ler_sens_lat() == true){  
+  if(ler_sens_lat_esq() == true){  
         if(timer_in - timer_prev3 >= 10){
-          v = (v+1);
+          num_passo += 1;
           Serial.print("Marca ");
-          Serial.print(v);
+          Serial.print(num_passo);
+
+          if(ler_sens_lat_esq)
+
+
           Serial.print((encoder.getCount() + encoder2.getCount())/2);
           //Serial.println(timer_in);
 
@@ -203,6 +237,30 @@ if(timer_in - timer_prev >= 10){
       timer_prev = timer_in;
     }
 }
+
+/*para comecar a corrida
+
+------------------------1------------1----------------
+      antes parada        1 leitura     2 leitura
+
+      comeca quando o sensor direito le 
+
+
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void controle_mapeado(){
    
@@ -308,7 +366,7 @@ void loop()
   mapeamento();      
   controle_mapeado();
 
-  /*if(ler_sens_lat_Dir() == true){  
+  /*if(ler_sens_lat_esq_Dir() == true){  
         if(timer_in - timer_prev4 >= 10){
           d = (d+1);
           if(d == 1){
